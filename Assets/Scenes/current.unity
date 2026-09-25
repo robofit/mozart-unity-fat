@@ -5716,7 +5716,7 @@ MonoBehaviour:
   PrefabsToSpawn:
   - Labels: 1
     Prefabs:
-    - {fileID: 4350422998566360405, guid: eb767546932719b4a987494d9f2eec53, type: 3}
+    - {fileID: 4350422998566360405, guid: 9965a485e7363ce4bb88e0ab3d2056cb, type: 3}
     PrefabSelection: 0
     MatchAspectRatio: 0
     CalculateFacingDirection: 0
