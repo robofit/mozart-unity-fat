@@ -13,6 +13,25 @@ The application runs on **Meta Quest 3** and uses a **Diminish Reality** approac
 - Feasibility analysis in a real production context
 - Mixed reality visualization on Meta Quest 3 using the Diminish Reality concept
 
+## Getting started
+
+- **Unity 6000.3.10f1** (see `ProjectSettings/ProjectVersion.txt`), Android build target for Meta Quest 3.
+- Clone with submodules — the shared package lives in `Packages/mozart-unity-shared`:
+
+  ```bash
+  git clone --recurse-submodules git@github.com:robofit/mozart-unity-fat.git
+  # or, in an existing clone:
+  git submodule update --init
+  ```
+
+- Add the third-party libraries that are not committed (see
+  [Dependencies not committed](#dependencies-not-committed-download-separately)).
+- The app needs an **ARCOR2** backend and the **mesh service** at runtime; their addresses are set
+  in `CommunicationManager.ServerUri` and `MeshDownloadManager.meshServerBaseUrl`. See
+  [Setup and External Dependencies](Docs/setup-and-external-dependencies.md).
+
+Further developer documentation is in [`Docs/`](Docs/index.md).
+
 ## Object-Shaped Portals
 
 Object-shaped portals mask a portal in the shape of a real object's geometry (instead of a
@@ -26,7 +45,7 @@ Two ToolMenu toggle buttons control **object-shaped** portals:
   red = not), pull the trigger to turn that object's silhouette into a portal.
 - **Delete Portal** — aim at an existing portal and pull the trigger to remove it.
 
-**Box-shaped** portals are added by a separate button, which spawns a ready-made bounding box in
+**Box-shaped** portals are added by the **Add Box Portal** button, which spawns a ready-made bounding box in
 front of you and selects it for editing — grip to move/rotate it, thumbsticks to resize. See
 [Edit Mode, Object Selection and Deletion](Docs/edit-mode-and-deletion.md) and the portal section
 of [Runtime Object Lifecycle](Docs/runtime-object-lifecycle.md).
@@ -147,10 +166,19 @@ from `_CameraDepthTexture`, which works for any mask shape — is the intended f
 
 ## Dependencies not committed (download separately)
 
-Following the project convention, third-party Asset Store libraries are not committed —
-install them from the Unity Asset Store before building:
+Following the project convention, third-party libraries are not committed. Place them into
+`Assets/3rdParty/` (ignored by git) before building:
 
-- **TriLib** and **SimpleCollada** (both required by `MeshImporter.cs`).
+- **TriLib** and **SimpleCollada** (both required by `MeshImporter.cs`) — taken from the private
+  Robo@FIT package source; see [Setup and External Dependencies](Docs/setup-and-external-dependencies.md)
+  for how to get access.
 
 For the offline segmentation and the experimental MRUK server: **Python 3.11** with
 **Open3D**, **NumPy**, and (for the server) **Flask**.
+
+## License
+
+This project is licensed under the [Apache License 2.0](LICENSE).
+
+Third-party components used by the project (e.g. the Meta XR SDK, TriLib, SimpleCollada) remain
+under their own licenses.
