@@ -18,7 +18,9 @@ public sealed class PerformanceOverlay : MonoBehaviour
     private GameObject _displayRoot;
     private TextMesh _textMesh;
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    // Auto-bootstrap DISABLED — the FPS/perf overlay is hidden on device.
+    // Re-enable it by uncommenting the [RuntimeInitializeOnLoadMethod] attribute below.
+    // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Bootstrap()
     {
         if (FindFirstObjectByType<PerformanceOverlay>() != null)

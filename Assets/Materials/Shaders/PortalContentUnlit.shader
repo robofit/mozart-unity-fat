@@ -21,6 +21,69 @@ Shader "Custom/PortalContentUnlit"
             Pass Keep
         }
 
+        // ------------------------------------------------------------------
+        // Pass 1 - depth prime.
+        //
+        // The Alternate Scene must render "over" the regular scene / passthrough / portal box (it is
+        // a window into another reality), which is why the colour pass below uses ZTest Always. But
+        // ZTest Always alone gives NO self-occlusion: within the content mesh, triangles overwrite
+        // each other in submission order, so the mesh looks frayed and faces drop out depending on
+        // the view angle.
+        //
+        // This depth-only pass fixes that. It redraws the same mesh with ZWrite On + ZTest Always,
+        // overwriting whatever depth was already in the portal region (the box front face written by
+        // StencilMask, or any scene geometry in front) with the content's OWN depth. The colour pass
+        // then runs with ZTest LEqual against this primed depth, so only the nearest content triangle
+        // per pixel survives - restoring correct self-occlusion while still ignoring the outside
+        // scene's depth. URP renders "SRPDefaultUnlit" passes before "UniversalForward" passes, which
+        // guarantees this pass runs first.
+        // ------------------------------------------------------------------
+        Pass
+        {
+            Name "PortalContentDepthPrime"
+            Tags { "LightMode"="SRPDefaultUnlit" }
+
+            ColorMask 0
+            ZWrite On
+            ZTest Always
+            Cull Back
+
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_instancing
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct Varyings
+            {
+                float4 positionHCS : SV_POSITION;
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            Varyings vert(Attributes input)
+            {
+                Varyings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+                output.positionHCS = TransformObjectToHClip(input.positionOS.xyz);
+                return output;
+            }
+
+            half4 frag(Varyings input) : SV_Target
+            {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                return half4(0, 0, 0, 0); // ColorMask 0 - only depth is written
+            }
+            ENDHLSL
+        }
+
         Pass
         {
             Name "UniversalForward"
@@ -28,8 +91,10 @@ Shader "Custom/PortalContentUnlit"
 
             Blend SrcAlpha OneMinusSrcAlpha
 
-            ZWrite Off
-            ZTest Always
+            // Self-occlude against the depth primed by the pass above (nearest content triangle wins)
+            // instead of drawing every triangle unconditionally.
+            ZWrite On
+            ZTest LEqual
             Cull Back
 
             HLSLPROGRAM
@@ -96,7 +161,7 @@ Shader "Custom/PortalContentUnlit"
 
                 if (tFar < tNear || tFar < 0.0)
                     return camWorld + normalize(dirWorld) * 0.01; // ray misses → keep portal solid
-          
+
 
                 float tEnter = max(tNear, 0.0);  // camera inside box -> front at camera
                 return camWorld + tEnter * dirWorld;
@@ -150,13 +215,12 @@ Shader "Custom/PortalContentUnlit"
                     return (envLinear < virtualLinear) ? half4(1,0,0,1) : half4(0,1,0,1);
                 }
                 #endif
-                
+
                 half4 col = texColor * _BaseColor;
                 col.a *= saturate(occ);
                 clip(col.a - 0.001);
                 return col;
             }
-
 
 
 

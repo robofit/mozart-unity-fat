@@ -79,13 +79,24 @@ Important settings:
 
 - `Stencil Ref 6`
 - `Comp Equal`
-- `ZWrite Off`
-- `ZTest Always`
+- two passes:
+  - **Pass 1 - depth prime** (`LightMode SRPDefaultUnlit`, `ColorMask 0`, `ZWrite On`, `ZTest Always`)
+  - **Pass 2 - colour** (`LightMode UniversalForward`, `ZWrite On`, `ZTest LEqual`)
 
-Why `ZTest Always`:
+Why two passes:
 
-- the Alternate Scene should not be clipped away by the regular scene depth
-- the Portal Window opening already constrains visibility through stencil and depth behavior
+- The Alternate Scene must render "over" the regular scene / passthrough / portal box (it is a window
+  into another reality), so it must **not** be clipped by the outside depth buffer.
+- A single `ZTest Always` pass achieves that but disables **self**-occlusion inside the content mesh:
+  triangles overwrite each other in submission order, so the mesh looks frayed and faces drop out
+  depending on the view angle (e.g. the top of a box disappearing).
+- Pass 1 redraws the mesh depth-only with `ZTest Always`, overwriting whatever depth was in the
+  portal region (the box front face from `StencilMask`, or scene geometry in front) with the
+  content's **own** depth. Pass 2 then draws colour with `ZTest LEqual` against that primed depth, so
+  only the nearest content triangle per pixel survives. Result: the "over everything" look is kept,
+  but the mesh occludes itself correctly.
+- URP draws `SRPDefaultUnlit` passes before `UniversalForward` passes, which guarantees pass 1 runs
+  before pass 2.
 
 ### 3. `SelectivePassthroughStencil.shader`
 
